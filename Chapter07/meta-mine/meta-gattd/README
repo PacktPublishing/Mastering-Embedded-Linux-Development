@@ -1,0 +1,46 @@
+This README file contains information on the contents of the meta-gattd layer.
+
+Please see the corresponding sections below for details.
+
+Dependencies
+============
+
+  URI: git://git.yoctoproject.org/poky.git
+  branch: kirkstone
+
+  URI: git://git.openembedded.org/meta-openembedded
+  branch: kirkstone
+
+  URI: git://git.yoctoproject.org/meta-raspberrypi
+  branch: kirkstone
+
+Patches
+=======
+
+Please submit any patches against the meta-gattd layer to the maintainer:
+
+Maintainer: Frank Vasquez <frank.vasquez@gmail.com>
+
+Table of Contents
+=================
+
+  I. Adding the meta-gattd layer to your build
+ II. Misc
+
+
+I. Adding the meta-gattd layer to your build
+=================================================
+
+bitbake-layers add-layer ../meta-openembedded/meta-oe
+bitbake-layers add-layer ../meta-openembedded/meta-python
+bitbake-layers add-layer ../meta-openembedded/meta-networking
+bitbake-layers add-layer ../meta-openembedded/meta-multimedia
+bitbake-layers add-layer ../meta-raspberrypi
+bitbake-layers add-layer ../meta-gattd
+
+II. Misc
+========
+
+This layer contains a BLE GATT server written in Python.
+This GATT daemon depends on BlueZ which requires D-Bus.
+Only the Raspberry Pi 3/4 are targeted because they have a Bluetooth module.

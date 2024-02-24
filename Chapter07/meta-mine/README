@@ -1,0 +1,35 @@
+This README file contains information on the contents of the meta-mine layer.
+
+Please see the corresponding sections below for details.
+
+Dependencies
+============
+
+  URI: git://git.yoctoproject.org/poky.git
+  branch: kirkstone
+
+Patches
+=======
+
+Please submit any patches against the meta-mine layer to the maintainer:
+
+Maintainer: Frank Vasquez <frank.vasquez@gmail.com>
+
+Table of Contents
+=================
+
+  I. Adding the meta-mine layer to your build
+ II. Misc
+
+
+I. Adding the meta-mine layer to your build
+=================================================
+
+bitbake-layers add-layer ../meta-openembedded/meta-oe
+bitbake-layers add-layer ../meta-openembedded/meta-python
+bitbake-layers add-layer ../meta-mine
+
+II. Misc
+========
+
+This layer captures the work we did with devtool for Chapter 7.

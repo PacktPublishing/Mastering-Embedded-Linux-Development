@@ -1,0 +1,36 @@
+This README file contains information on the contents of the meta-mackerel layer.
+
+Please see the corresponding sections below for details.
+
+Dependencies
+============
+
+  URI: git://git.yoctoproject.org/poky.git
+  branch: kirkstone 
+
+  URI: git://git.openembedded.org/meta-openembedded
+  branch: kirkstone 
+
+Patches
+=======
+
+Please submit any patches against the meta-mackerel layer to the maintainer:
+
+Maintainer: Frank Vasquez <frank.vasquez@gmail.com>
+
+Table of Contents
+=================
+
+  I. Adding the meta-mackerel layer to your build
+ II. Misc
+
+
+I. Adding the meta-mackerel layer to your build
+=================================================
+
+bitbake-layers add-layer ../meta-mackerel
+
+II. Misc
+========
+
+This layer is an example of how to configure your own distro.
