@@ -1,0 +1,1208 @@
+From 1bd1a760ce43b390641a67b550eb6fd2fe3450e5 Mon Sep 17 00:00:00 2001
+From: Frank Vasquez <frank.vasquez@gmail.com>
+Date: Sat, 24 Feb 2024 22:31:01 -0800
+Subject: [PATCH] BSP for Nova
+
+---
+ arch/arm/Kconfig       |   1 +
+ board/ti/nova/Kconfig  |  63 +++++
+ board/ti/nova/Makefile |   8 +
+ board/ti/nova/nova.c   | 268 ++++++++++++++++++
+ configs/nova_defconfig | 196 +++++++++++++
+ include/configs/nova.h | 609 +++++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 1145 insertions(+)
+ create mode 100644 board/ti/nova/Kconfig
+ create mode 100644 board/ti/nova/Makefile
+ create mode 100644 board/ti/nova/nova.c
+ create mode 100644 configs/nova_defconfig
+ create mode 100644 include/configs/nova.h
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index fbe90875ae..3e0c5691ae 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -2029,6 +2029,7 @@ source "board/spear/spear600/Kconfig"
+ source "board/spear/x600/Kconfig"
+ source "board/st/stv0991/Kconfig"
+ source "board/tcl/sl50/Kconfig"
++source "board/ti/nova/Kconfig"
+ source "board/toradex/colibri_pxa270/Kconfig"
+ source "board/variscite/dart_6ul/Kconfig"
+ source "board/vscom/baltos/Kconfig"
+diff --git a/board/ti/nova/Kconfig b/board/ti/nova/Kconfig
+new file mode 100644
+index 0000000000..3624563e86
+--- /dev/null
++++ b/board/ti/nova/Kconfig
+@@ -0,0 +1,63 @@
++# SPDX-License-Identifier: GPL-2.0+
++#
++# Copyright (C) 2020-2022 Texas Instruments Incorporated - https://www.ti.com/
++#	Suman Anna <s-anna@ti.com>
++
++choice
++	prompt "TI K3 AM62x based Nova! board"
++	optional
++
++config TARGET_NOVA
++	bool "Nova! board running on A53"
++	select ARM64
++	select SOC_K3_AM625
++	imply BOARD
++	imply SPL_BOARD
++	imply TI_I2C_BOARD_DETECT
++
++config TARGET_AM625_R5_EVM
++	bool "Nova! board running on R5"
++	select CPU_V7R
++	select SYS_THUMB_BUILD
++	select K3_LOAD_SYSFW
++	select SOC_K3_AM625
++	select RAM
++	select SPL_RAM
++	select K3_DDRSS
++	imply SYS_K3_SPL_ATF
++	imply TI_I2C_BOARD_DETECT
++
++endchoice
++
++if TARGET_NOVA
++
++config SYS_BOARD
++       default "nova"
++
++config SYS_VENDOR
++       default "ti"
++
++config SYS_CONFIG_NAME
++       default "nova"
++
++source "board/ti/common/Kconfig"
++
++endif
++
++if TARGET_AM625_R5_EVM
++
++config SYS_BOARD
++       default "am62x"
++
++config SYS_VENDOR
++       default "ti"
++
++config SYS_CONFIG_NAME
++       default "am62x_evm"
++
++config SPL_LDSCRIPT
++	default "arch/arm/mach-omap2/u-boot-spl.lds"
++
++source "board/ti/common/Kconfig"
++
++endif
+diff --git a/board/ti/nova/Makefile b/board/ti/nova/Makefile
+new file mode 100644
+index 0000000000..69d37dad15
+--- /dev/null
++++ b/board/ti/nova/Makefile
+@@ -0,0 +1,8 @@
++#
++# Copyright (C) 2020-2022 Texas Instruments Incorporated - https://www.ti.com/
++#	Suman Anna <s-anna@ti.com>
++#
++# SPDX-License-Identifier:     GPL-2.0+
++#
++
++obj-y	+= nova.o
+diff --git a/board/ti/nova/nova.c b/board/ti/nova/nova.c
+new file mode 100644
+index 0000000000..aced7da387
+--- /dev/null
++++ b/board/ti/nova/nova.c
+@@ -0,0 +1,268 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Board specific initialization for AM62x platforms
++ *
++ * Copyright (C) 2020-2022 Texas Instruments Incorporated - https://www.ti.com/
++ *	Suman Anna <s-anna@ti.com>
++ *
++ */
++
++#include <common.h>
++#include <asm/io.h>
++#include <spl.h>
++#include <dm/uclass.h>
++#include <k3-ddrss.h>
++#include <fdt_support.h>
++#include <asm/arch/hardware.h>
++#include <asm/arch/sys_proto.h>
++#include <env.h>
++
++#include "../common/board_detect.h"
++
++#define board_is_am62x_skevm()		board_ti_k3_is("AM62-SKEVM")
++#define board_is_am62x_lp_skevm()	board_ti_k3_is("AM62-LP-SKEVM")
++#define board_is_am62x_play()		board_ti_k3_is("BEAGLEPLAY-A0-")
++
++DECLARE_GLOBAL_DATA_PTR;
++
++int board_init(void)
++{
++	return 0;
++}
++
++int dram_init(void)
++{
++	return fdtdec_setup_mem_size_base();
++}
++
++int dram_init_banksize(void)
++{
++	return fdtdec_setup_memory_banksize();
++}
++
++#if defined(CONFIG_SPL_LOAD_FIT)
++int board_fit_config_name_match(const char *name)
++{
++	bool eeprom_read = board_ti_was_eeprom_read();
++
++	if (!eeprom_read)
++		return -1;
++
++	if (board_is_am62x_lp_skevm()) {
++		if (!strcmp(name, "k3-am62x-r5-lp-sk") || !strcmp(name, "k3-am62x-lp-sk"))
++			return 0;
++	} else if (board_is_am62x_skevm()) {
++		if (!strcmp(name, "k3-am625-r5-sk") || !strcmp(name, "k3-am625-sk"))
++			return 0;
++	} else if (board_is_am62x_play()) {
++		if (!strcmp(name, "k3-am625-r5-beagleplay") || !strcmp(name, "k3-am625-beagleplay"))
++			return 0;
++	}
++
++	return -1;
++}
++#endif
++
++#if defined(CONFIG_SPL_BUILD)
++#if defined(CONFIG_K3_AM64_DDRSS)
++static void fixup_ddr_driver_for_ecc(struct spl_image_info *spl_image)
++{
++	struct udevice *dev;
++	int ret;
++
++	dram_init_banksize();
++
++	ret = uclass_get_device(UCLASS_RAM, 0, &dev);
++	if (ret)
++		panic("Cannot get RAM device for ddr size fixup: %d\n", ret);
++
++	ret = k3_ddrss_ddr_fdt_fixup(dev, spl_image->fdt_addr, gd->bd);
++	if (ret)
++		printf("Error fixing up ddr node for ECC use! %d\n", ret);
++}
++#else
++static void fixup_memory_node(struct spl_image_info *spl_image)
++{
++	u64 start[CONFIG_NR_DRAM_BANKS];
++	u64 size[CONFIG_NR_DRAM_BANKS];
++	int bank;
++	int ret;
++
++	dram_init();
++	dram_init_banksize();
++
++	for (bank = 0; bank < CONFIG_NR_DRAM_BANKS; bank++) {
++		start[bank] =  gd->bd->bi_dram[bank].start;
++		size[bank] = gd->bd->bi_dram[bank].size;
++	}
++
++	/* dram_init functions use SPL fdt, and we must fixup u-boot fdt */
++	ret = fdt_fixup_memory_banks(spl_image->fdt_addr,
++				     start, size, CONFIG_NR_DRAM_BANKS);
++	if (ret)
++		printf("Error fixing up memory node! %d\n", ret);
++}
++#endif
++
++void spl_perform_fixups(struct spl_image_info *spl_image)
++{
++#if defined(CONFIG_K3_AM64_DDRSS)
++	fixup_ddr_driver_for_ecc(spl_image);
++#else
++	fixup_memory_node(spl_image);
++#endif
++}
++#endif
++
++#ifdef CONFIG_TI_I2C_BOARD_DETECT
++int do_board_detect(void)
++{
++	int ret;
++
++	ret = ti_i2c_eeprom_am6_get_base(CONFIG_EEPROM_BUS_ADDRESS,
++					 CONFIG_EEPROM_CHIP_ADDRESS);
++	if (ret) {
++		printf("EEPROM not available at 0x%02x, trying to read at 0x%02x\n",
++		       CONFIG_EEPROM_CHIP_ADDRESS, CONFIG_EEPROM_CHIP_ADDRESS + 1);
++		ret = ti_i2c_eeprom_am6_get_base(CONFIG_EEPROM_BUS_ADDRESS,
++						 CONFIG_EEPROM_CHIP_ADDRESS + 1);
++		if (ret)
++			pr_err("Reading on-board EEPROM at 0x%02x failed %d\n",
++			       CONFIG_EEPROM_CHIP_ADDRESS + 1, ret);
++	}
++
++	return ret;
++}
++
++int checkboard(void)
++{
++	struct ti_am6_eeprom *ep = TI_AM6_EEPROM_DATA;
++
++	if (!do_board_detect())
++		printf("Board: %s rev %s\n", ep->name, ep->version);
++
++	return 0;
++}
++
++#ifdef CONFIG_BOARD_LATE_INIT
++static void setup_board_eeprom_env(void)
++{
++	char *name = "am62x_play";
++
++	if (do_board_detect())
++		goto invalid_eeprom;
++
++	if (board_is_am62x_skevm())
++		name = "am62x_skevm";
++	else if (board_is_am62x_lp_skevm())
++		name = "am62x_lp_skevm";
++	else if (board_is_am62x_play())
++		name = "am62x_play";
++	else
++		printf("Unidentified board claims %s in eeprom header\n",
++		       board_ti_get_name());
++
++invalid_eeprom:
++	set_board_info_env_am6(name);
++}
++
++static void setup_serial(void)
++{
++	struct ti_am6_eeprom *ep = TI_AM6_EEPROM_DATA;
++	unsigned long board_serial;
++	char *endp;
++	char serial_string[17] = { 0 };
++
++	if (env_get("serial#"))
++		return;
++
++	board_serial = simple_strtoul(ep->serial, &endp, 16);
++	if (*endp != '\0') {
++		pr_err("Error: Can't set serial# to %s\n", ep->serial);
++		return;
++	}
++
++	snprintf(serial_string, sizeof(serial_string), "%016lx", board_serial);
++	env_set("serial#", serial_string);
++}
++#endif
++#endif
++
++#ifdef CONFIG_BOARD_LATE_INIT
++int board_late_init(void)
++{
++	if (IS_ENABLED(CONFIG_TI_I2C_BOARD_DETECT)) {
++		struct ti_am6_eeprom *ep = TI_AM6_EEPROM_DATA;
++
++		setup_board_eeprom_env();
++		setup_serial();
++		/*
++		 * The first MAC address for ethernet a.k.a. ethernet0 comes from
++		 * efuse populated via the am654 gigabit eth switch subsystem driver.
++		 * All the other ones are populated via EEPROM, hence continue with
++		 * an index of 1.
++		 */
++		board_ti_am6_set_ethaddr(1, ep->mac_addr_cnt);
++	}
++
++	/* Default FIT boot on non-GP devices */
++	if (get_device_type() != K3_DEVICE_TYPE_GP)
++		env_set("boot_fit", "1");
++
++	return 0;
++}
++#endif
++
++#define CTRLMMR_USB0_PHY_CTRL	0x43004008
++#define CTRLMMR_USB1_PHY_CTRL	0x43004018
++#define CORE_VOLTAGE		0x80000000
++
++#define WKUP_CTRLMMR_DBOUNCE_CFG1 0x04504084
++#define WKUP_CTRLMMR_DBOUNCE_CFG2 0x04504088
++#define WKUP_CTRLMMR_DBOUNCE_CFG3 0x0450408c
++#define WKUP_CTRLMMR_DBOUNCE_CFG4 0x04504090
++#define WKUP_CTRLMMR_DBOUNCE_CFG5 0x04504094
++#define WKUP_CTRLMMR_DBOUNCE_CFG6 0x04504098
++
++#ifdef CONFIG_SPL_BOARD_INIT
++void spl_board_init(void)
++{
++	u32 val;
++
++	/* Set USB0 PHY core voltage to 0.85V */
++	val = readl(CTRLMMR_USB0_PHY_CTRL);
++	val &= ~(CORE_VOLTAGE);
++	writel(val, CTRLMMR_USB0_PHY_CTRL);
++
++	/* Set USB1 PHY core voltage to 0.85V */
++	val = readl(CTRLMMR_USB1_PHY_CTRL);
++	val &= ~(CORE_VOLTAGE);
++	writel(val, CTRLMMR_USB1_PHY_CTRL);
++
++	/* We have 32k crystal, so lets enable it */
++	val = readl(MCU_CTRL_LFXOSC_CTRL);
++	val &= ~(MCU_CTRL_LFXOSC_32K_DISABLE_VAL);
++	writel(val, MCU_CTRL_LFXOSC_CTRL);
++	/* Add any TRIM needed for the crystal here.. */
++	/* Make sure to mux up to take the SoC 32k from the crystal */
++	writel(MCU_CTRL_DEVICE_CLKOUT_LFOSC_SELECT_VAL,
++	       MCU_CTRL_DEVICE_CLKOUT_32K_CTRL);
++
++	/* Setup debounce conf registers - arbitrary values. Times are approx */
++	/* 1.9ms debounce @ 32k */
++	writel(WKUP_CTRLMMR_DBOUNCE_CFG1, 0x1);
++	/* 5ms debounce @ 32k */
++	writel(WKUP_CTRLMMR_DBOUNCE_CFG2, 0x5);
++	/* 20ms debounce @ 32k */
++	writel(WKUP_CTRLMMR_DBOUNCE_CFG3, 0x14);
++	/* 46ms debounce @ 32k */
++	writel(WKUP_CTRLMMR_DBOUNCE_CFG4, 0x18);
++	/* 100ms debounce @ 32k */
++	writel(WKUP_CTRLMMR_DBOUNCE_CFG5, 0x1c);
++	/* 156ms debounce @ 32k */
++	writel(WKUP_CTRLMMR_DBOUNCE_CFG6, 0x1f);
++
++	/* Init DRAM size for R5/A53 SPL */
++	dram_init_banksize();
++}
++#endif
+diff --git a/configs/nova_defconfig b/configs/nova_defconfig
+new file mode 100644
+index 0000000000..8e4fe47fd7
+--- /dev/null
++++ b/configs/nova_defconfig
+@@ -0,0 +1,196 @@
++CONFIG_ARM=y
++CONFIG_ARCH_K3=y
++CONFIG_TI_SECURE_DEVICE=y
++CONFIG_TI_COMMON_CMD_OPTIONS=y
++CONFIG_SPL_GPIO_SUPPORT=y
++CONFIG_SPL_LIBCOMMON_SUPPORT=y
++CONFIG_SPL_LIBGENERIC_SUPPORT=y
++CONFIG_SYS_MALLOC_F_LEN=0x8000
++CONFIG_NR_DRAM_BANKS=2
++CONFIG_SOC_K3_AM625=y
++CONFIG_K3_ATF_LOAD_ADDR=0x9e780000
++CONFIG_TARGET_AM625_A53_EVM=y
++CONFIG_TARGET_NOVA=y
++CONFIG_ENV_SIZE=0x20000
++CONFIG_ENV_OFFSET=0x680000
++CONFIG_SYS_SPI_U_BOOT_OFFS=0x280000
++CONFIG_DM_GPIO=y
++CONFIG_SPL_DM_SPI=y
++CONFIG_SPL_TEXT_BASE=0x80080000
++CONFIG_SPL_MMC_SUPPORT=y
++CONFIG_SPL_SERIAL_SUPPORT=y
++CONFIG_SPL_DRIVERS_MISC_SUPPORT=y
++CONFIG_SPL_STACK_R_ADDR=0x82000000
++CONFIG_SPL_FS_FAT=y
++CONFIG_SPL_LIBDISK_SUPPORT=y
++CONFIG_SPL_SPI_FLASH_SUPPORT=y
++CONFIG_SPL_SPI_SUPPORT=y
++CONFIG_DEFAULT_DEVICE_TREE="k3-am625-beagleplay"
++CONFIG_DISTRO_DEFAULTS=y
++# CONFIG_SYS_MALLOC_CLEAR_ON_INIT is not set
++CONFIG_FIT_IMAGE_POST_PROCESS=y
++CONFIG_SPL_LOAD_FIT=y
++CONFIG_SPL_LOAD_FIT_ADDRESS=0x81000000
++CONFIG_SPL_LOAD_FIT_APPLY_OVERLAY=y
++CONFIG_SPL_FIT_IMAGE_POST_PROCESS=y
++CONFIG_AUTOBOOT_KEYED=y
++CONFIG_AUTOBOOT_PROMPT="Press SPACE to abort autoboot in %d seconds\n"
++CONFIG_AUTOBOOT_DELAY_STR="d"
++CONFIG_AUTOBOOT_STOP_STR=" "
++CONFIG_BOARD_LATE_INIT=y
++CONFIG_MISC_INIT_R=y
++CONFIG_SPL_BOARD_INIT=y
++CONFIG_AVB_VERIFY=y
++CONFIG_ANDROID_AB=y
++CONFIG_SPL_SYS_MALLOC_SIMPLE=y
++CONFIG_SPL_STACK_R=y
++CONFIG_SPL_SEPARATE_BSS=y
++CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_USE_SECTOR=y
++CONFIG_SYS_MMCSD_RAW_MODE_U_BOOT_SECTOR=0x1400
++CONFIG_SPL_HASH_SUPPORT=y
++CONFIG_SPL_DMA=y
++CONFIG_SPL_ETH_SUPPORT=y
++CONFIG_SPL_ENV_SUPPORT=y
++CONFIG_SPL_I2C_SUPPORT=y
++CONFIG_SPL_DM_MAILBOX=y
++CONFIG_SPL_DM_SPI_FLASH=y
++CONFIG_SPL_NET_SUPPORT=y
++CONFIG_SPL_NET_VCI_STRING="AM62X U-Boot A53 SPL"
++CONFIG_SPL_POWER_SUPPORT=y
++CONFIG_SPL_POWER_DOMAIN=y
++CONFIG_SPL_RAM_SUPPORT=y
++CONFIG_SPL_RAM_DEVICE=y
++# CONFIG_SPL_SPI_FLASH_TINY is not set
++CONFIG_SPL_SPI_FLASH_SFDP_SUPPORT=y
++CONFIG_SPL_SPI_LOAD=y
++CONFIG_SPL_THERMAL=y
++CONFIG_SPL_USB_GADGET=y
++CONFIG_SPL_DFU=y
++CONFIG_SPL_YMODEM_SUPPORT=y
++# CONFIG_CMD_BOOTZ is not set
++CONFIG_CMD_ADTIMG=y
++CONFIG_CMD_ABOOTIMG=y
++# CONFIG_CMD_EEPROM is not set
++CONFIG_CMD_BCB=y
++CONFIG_CMD_DM=y
++CONFIG_CMD_GPIO=y
++# CONFIG_CMD_SPI is not set
++CONFIG_CMD_AB_SELECT=y
++CONFIG_CMD_DDRSS=y
++# CONFIG_CMD_REGULATOR is not set
++# CONFIG_CMD_EXT4_WRITE is not set
++CONFIG_CMD_AVB=y
++CONFIG_CMD_USB_MASS_STORAGE=y
++CONFIG_CMD_BOOTEFI_SELFTEST=y
++CONFIG_OF_CONTROL=y
++CONFIG_SPL_OF_CONTROL=y
++CONFIG_MULTI_DTB_FIT=y
++CONFIG_OF_LIST="k3-am625-beagleplay k3-am625-sk"
++CONFIG_SPL_MULTI_DTB_FIT=y
++CONFIG_SPL_MULTI_DTB_FIT_NO_COMPRESSION=y
++CONFIG_ENV_IS_IN_MMC=y
++CONFIG_SYS_MMC_ENV_PART=1
++CONFIG_NET_RANDOM_ETHADDR=y
++CONFIG_DM=y
++CONFIG_SPL_DM=y
++CONFIG_SPL_DM_SEQ_ALIAS=y
++CONFIG_REGMAP=y
++CONFIG_SPL_REGMAP=y
++CONFIG_SYSCON=y
++CONFIG_SPL_SYSCON=y
++CONFIG_SPL_OF_TRANSLATE=y
++CONFIG_CLK=y
++CONFIG_SPL_CLK=y
++CONFIG_CLK_TI_SCI=y
++CONFIG_DFU_MMC=y
++CONFIG_DFU_RAM=y
++CONFIG_DFU_SF=y
++CONFIG_SYS_DFU_DATA_BUF_SIZE=0x40000
++CONFIG_SYS_DFU_MAX_FILE_SIZE=0x800000
++CONFIG_DMA_CHANNELS=y
++CONFIG_TI_K3_NAVSS_UDMA=y
++CONFIG_USB_FUNCTION_FASTBOOT=y
++CONFIG_FASTBOOT_BUF_ADDR=0xC0000000
++CONFIG_FASTBOOT_BUF_SIZE=0x2F000000
++CONFIG_FASTBOOT_FLASH=y
++CONFIG_FASTBOOT_FLASH_MMC_DEV=0
++CONFIG_FASTBOOT_CMD_OEM_FORMAT=y
++CONFIG_TI_SCI_PROTOCOL=y
++CONFIG_DA8XX_GPIO=y
++CONFIG_DM_PCA953X=y
++CONFIG_SPL_DM_PCA953X=y
++CONFIG_DM_I2C=y
++CONFIG_DM_I2C_GPIO=y
++CONFIG_SYS_I2C_OMAP24XX=y
++CONFIG_DM_MAILBOX=y
++CONFIG_K3_SEC_PROXY=y
++CONFIG_DM_MMC=y
++CONFIG_SUPPORT_EMMC_BOOT=y
++CONFIG_MMC_IO_VOLTAGE=y
++CONFIG_SPL_MMC_IO_VOLTAGE=y
++CONFIG_MMC_UHS_SUPPORT=y
++CONFIG_SPL_MMC_UHS_SUPPORT=y
++CONFIG_MMC_HS200_SUPPORT=y
++CONFIG_SPL_MMC_HS200_SUPPORT=y
++CONFIG_MMC_SDHCI=y
++CONFIG_MMC_SDHCI_ADMA=y
++CONFIG_SPL_MMC_SDHCI_ADMA=y
++CONFIG_MMC_SDHCI_AM654=y
++CONFIG_DM_SPI_FLASH=y
++CONFIG_SPI_FLASH_SFDP_SUPPORT=y
++CONFIG_SPI_FLASH_SOFT_RESET=y
++CONFIG_SPI_FLASH_SOFT_RESET_ON_BOOT=y
++CONFIG_SPI_FLASH_SPANSION=y
++CONFIG_SPI_FLASH_S28HS512T=y
++CONFIG_SPI_FLASH_STMICRO=y
++CONFIG_SPI_FLASH_MT35XU=y
++CONFIG_PHY_TI_DP83867=y
++CONFIG_PHY_FIXED=y
++CONFIG_DM_ETH=y
++CONFIG_TI_AM65_CPSW_NUSS=y
++CONFIG_PINCTRL=y
++CONFIG_SPL_PINCTRL=y
++CONFIG_PINCTRL_SINGLE=y
++CONFIG_POWER_DOMAIN=y
++CONFIG_TI_SCI_POWER_DOMAIN=y
++CONFIG_DM_REGULATOR=y
++CONFIG_SPL_DM_REGULATOR=y
++CONFIG_DM_REGULATOR_FIXED=y
++CONFIG_SPL_DM_REGULATOR_FIXED=y
++CONFIG_DM_REGULATOR_GPIO=y
++CONFIG_SPL_DM_REGULATOR_GPIO=y
++CONFIG_K3_SYSTEM_CONTROLLER=y
++CONFIG_REMOTEPROC_TI_K3_ARM64=y
++CONFIG_DM_RESET=y
++CONFIG_RESET_TI_SCI=y
++CONFIG_DM_SERIAL=y
++CONFIG_SOC_DEVICE=y
++CONFIG_SOC_DEVICE_TI_K3=y
++CONFIG_SOC_TI=y
++CONFIG_SPI=y
++CONFIG_DM_SPI=y
++CONFIG_CADENCE_QSPI=y
++CONFIG_CADENCE_QSPI_PHY=y
++CONFIG_SYSRESET=y
++CONFIG_SPL_SYSRESET=y
++CONFIG_SYSRESET_TI_SCI=y
++CONFIG_DM_THERMAL=y
++CONFIG_USB=y
++CONFIG_DM_USB=y
++CONFIG_DM_USB_GADGET=y
++CONFIG_SPL_DM_USB_GADGET=y
++CONFIG_USB_XHCI_HCD=y
++CONFIG_USB_DWC3=y
++CONFIG_USB_DWC3_GENERIC=y
++CONFIG_USB_DWC3_AM62=y
++CONFIG_USB_GADGET=y
++CONFIG_USB_GADGET_MANUFACTURER="Texas Instruments"
++CONFIG_USB_GADGET_VENDOR_NUM=0x0451
++CONFIG_USB_GADGET_PRODUCT_NUM=0x6165
++CONFIG_USB_FUNCTION_MASS_STORAGE=y
++CONFIG_FS_FAT_MAX_CLUSTSIZE=16384
++CONFIG_LIBAVB=y
++CONFIG_EXT4_WRITE=y
++CONFIG_BOOTCOMMAND="run findfdt;run distro_bootcmd"
++CONFIG_LZO=y
++CONFIG_OF_LIBFDT_OVERLAY=y
+diff --git a/include/configs/nova.h b/include/configs/nova.h
+new file mode 100644
+index 0000000000..b1f423dedb
+--- /dev/null
++++ b/include/configs/nova.h
+@@ -0,0 +1,609 @@
++/* SPDX-License-Identifier: GPL-2.0+ */
++/*
++ * Configuration header file for K3 AM625 SoC family
++ *
++ * Copyright (C) 2020-2022 Texas Instruments Incorporated - https://www.ti.com/
++ *	Suman Anna <s-anna@ti.com>
++ */
++
++#ifndef __CONFIG_NOVA_H
++#define __CONFIG_NOVA_H
++
++#include <linux/sizes.h>
++#include <config_distro_bootcmd.h>
++#include <environment/ti/mmc.h>
++#include <environment/ti/k3_dfu.h>
++
++#undef CONFIG_SYS_PROMPT
++#define CONFIG_SYS_PROMPT               "nova!> "
++
++/* DDR Configuration */
++#define CONFIG_SYS_SDRAM_BASE1		0x880000000
++#define CONFIG_SYS_BOOTM_LEN            SZ_64M
++
++#ifdef CONFIG_SYS_K3_SPL_ATF
++#define CONFIG_SPL_FS_LOAD_PAYLOAD_NAME	"tispl.bin"
++#endif
++
++#if defined(CONFIG_TARGET_AM625_A53_EVM)
++#define CONFIG_SPL_MAX_SIZE		SZ_1M
++#define CONFIG_SYS_INIT_SP_ADDR         (CONFIG_SPL_TEXT_BASE + SZ_4M)
++#else
++#define CONFIG_SPL_MAX_SIZE		CONFIG_SYS_K3_MAX_DOWNLODABLE_IMAGE_SIZE
++/*
++ * Maximum size in memory allocated to the SPL BSS. Keep it as tight as
++ * possible (to allow the build to go through), as this directly affects
++ * our memory footprint. The less we use for BSS the more we have available
++ * for everything else.
++ */
++#define CONFIG_SPL_BSS_MAX_SIZE		0x3000
++/*
++ * Link BSS to be within SPL in a dedicated region located near the top of
++ * the MCU SRAM, this way making it available also before relocation. Note
++ * that we are not using the actual top of the MCU SRAM as there is a memory
++ * location allocated for Device Manager data and some memory filled in by
++ * the boot ROM that we want to read out without any interference from the
++ * C context.
++ */
++#define CONFIG_SPL_BSS_START_ADDR	(0x43c3e000 -\
++					 CONFIG_SPL_BSS_MAX_SIZE)
++/* Set the stack right below the SPL BSS section */
++#define CONFIG_SYS_INIT_SP_ADDR         0x43c3a7f0
++/* Configure R5 SPL post-relocation malloc pool in DDR */
++#define CONFIG_SYS_SPL_MALLOC_START    0x84000000
++#define CONFIG_SYS_SPL_MALLOC_SIZE     SZ_16M
++#endif
++
++#define PARTS_DEFAULT \
++	/* Linux partitions */ \
++	"uuid_disk=${uuid_gpt_disk};" \
++	"name=rootfs,start=0,size=-,uuid=${uuid_gpt_rootfs}\0" \
++	/* Android partitions */ \
++	"partitions_android=" \
++	"uuid_disk=${uuid_gpt_disk};" \
++	"name=bootloader,start=5M,size=8M,uuid=${uuid_gpt_bootloader};" \
++	"name=tiboot3,start=4M,size=1M,uuid=${uuid_gpt_tiboot3};" \
++	"name=uboot-env,start=13M,size=512K,uuid=${uuid_gpt_env};" \
++	"name=misc,start=13824K,size=512K,uuid=${uuid_gpt_misc};" \
++	"name=boot_a,size=40M,uuid=${uuid_gpt_boot_a};" \
++	"name=boot_b,size=40M,uuid=${uuid_gpt_boot_b};" \
++	"name=dtbo_a,size=8M,uuid=${uuid_gpt_dtbo_a};" \
++	"name=dtbo_b,size=8M,uuid=${uuid_gpt_dtbo_b};" \
++	"name=vbmeta_a,size=64K,uuid=${uuid_gpt_vbmeta_a};" \
++	"name=vbmeta_b,size=64K,uuid=${uuid_gpt_vbmeta_b};" \
++	"name=super,size=4608M,uuid=${uuid_gpt_super};" \
++	"name=metadata,size=16M,uuid=${uuid_gpt_metadata};" \
++	"name=persist,size=32M,uuid=${uuid_gpt_persist};" \
++	"name=userdata,size=-,uuid=${uuid_gpt_userdata}\0"
++
++/* U-Boot general configuration */
++#define EXTRA_ENV_AM625_BOARD_SETTINGS					\
++	"default_device_tree=" CONFIG_DEFAULT_DEVICE_TREE ".dtb\0"	\
++	"findfdt="							\
++		"setenv name_fdt ${default_device_tree};"		\
++		"if test $board_name = am62x_skevm; then "		\
++			"setenv name_fdt k3-am625-sk.dtb; fi;"		\
++		"if test $board_name = am62x_lp_skevm; then "		\
++			"setenv name_fdt k3-am62x-lp-sk.dtb; fi;"	\
++		"if test $board_name = am62x_play; then "		\
++			"setenv name_fdt k3-am625-beagleplay.dtb; fi;"	\
++		"setenv fdtfile ${name_fdt}\0"				\
++	"name_kern=Image\0"						\
++	"console=ttyS2,115200n8\0"					\
++	"args_all=setenv optargs ${optargs} "				\
++		"earlycon=ns16550a,mmio32,0x02800000 ${mtdparts}\0"	\
++	"run_kern=booti ${loadaddr} ${rd_spec} ${fdtaddr}\0"
++
++/* U-Boot MMC-specific configuration */
++#define EXTRA_ENV_AM625_BOARD_SETTINGS_MMC				\
++	"boot=mmc\0"							\
++	"mmcdev=1\0"							\
++	"bootpart=1:2\0"						\
++	"bootdir=/boot\0"						\
++	"rd_spec=-\0"							\
++	"init_mmc=run args_all args_mmc\0"				\
++	"get_fdt_mmc=load mmc ${bootpart} ${fdtaddr} ${bootdir}/${name_fdt}\0" \
++	"get_overlay_mmc="						\
++		"fdt address ${fdtaddr};"				\
++		"fdt resize 0x100000;"					\
++		"for overlay in $name_overlays;"			\
++		"do;"							\
++		"load mmc ${bootpart} ${dtboaddr} ${bootdir}/${overlay} && "	\
++		"fdt apply ${dtboaddr};"				\
++		"done;\0"						\
++	"get_kern_mmc=load mmc ${bootpart} ${loadaddr} "		\
++		"${bootdir}/${name_kern}\0"				\
++	"get_fit_mmc=load mmc ${bootpart} ${addr_fit} "			\
++		"${bootdir}/${name_fit}\0"				\
++	"partitions=" PARTS_DEFAULT
++
++#define EXTRA_ENV_AM625_BOARD_SETTING_USBMSC				\
++	"args_usb=run finduuid;setenv bootargs console=${console} "	\
++		"${optargs} "						\
++		"root=PARTUUID=${uuid} rw "				\
++		"rootfstype=${mmcrootfstype}\0"				\
++	"init_usb=run args_all args_usb\0"				\
++	"get_fdt_usb=load usb ${bootpart} ${fdtaddr} ${bootdir}/${fdtfile}\0"	\
++	"get_overlay_usb="						\
++		"fdt address ${fdtaddr};"				\
++		"fdt resize 0x100000;"					\
++		"for overlay in $name_overlays;"			\
++		"do;"							\
++		"load usb ${bootpart} ${dtboaddr} ${bootdir}/${overlay} && "	\
++		"fdt apply ${dtboaddr};"				\
++		"done;\0"						\
++	"get_kern_usb=load usb ${bootpart} ${loadaddr} "		\
++		"${bootdir}/${name_kern}\0"				\
++	"get_fit_usb=load usb ${bootpart} ${addr_fit} "			\
++		"${bootdir}/${name_fit}\0"				\
++	"usbboot=setenv boot usb;"					\
++		"setenv bootpart 0:2;"					\
++		"usb start;"						\
++		"run findfdt;"						\
++		"run init_usb;"						\
++		"run get_kern_usb;"					\
++		"run get_fdt_usb;"					\
++		"run run_kern\0"
++
++
++#define EXTRA_ENV_AM625_BEAGPLAY_PRODUCTION_BOARD_SETTINGS			\
++	"play_eeprom_i2c_dev=0;\0"						\
++	"play_eeprom_i2c_addr=0x50;\0"						\
++	"play_eeprom_wp_gpio=10;\0"						\
++	"play_eeprom_dump=i2c dev ${play_eeprom_i2c_dev}; "			\
++		"i2c md ${play_eeprom_i2c_addr} 0x00.2 40; "			\
++		"\0"								\
++	"play_eeprom_production_program=i2c dev ${play_eeprom_i2c_dev}; "	\
++		"i2c md ${play_eeprom_i2c_addr} 0x00.2 40; "			\
++		"gpio clear ${play_eeprom_wp_gpio}; "				\
++		"i2c mw ${play_eeprom_i2c_addr} 0x00.2 aa; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x01.2 55; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x02.2 33; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x03.2 ee; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x04.2 01; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x05.2 37; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x06.2 00; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x07.2 10; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x08.2 2e; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x09.2 00; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x0a.2 42; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x0b.2 45; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x0c.2 41; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x0d.2 47; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x0e.2 4c; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x0f.2 45; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x10.2 50; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x11.2 4c; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x12.2 41; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x13.2 59; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x14.2 2d; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x15.2 41; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x16.2 30; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x17.2 2d; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x18.2 00; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x19.2 00; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x1a.2 30; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x1b.2 32; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x1c.2 30; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x1d.2 30; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x1e.2 37; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x1f.2 38; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x20.2 30; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x21.2 31; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x22.2 30; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x23.2 32; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x24.2 30; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x25.2 30; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x26.2 30; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x27.2 31; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x28.2 36; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x29.2 34; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x2a.2 57; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x2b.2 57; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x2c.2 32; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x2d.2 33; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x2e.2 42; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x2f.2 42; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x30.2 42; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x31.2 42; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x32.2 42; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x33.2 42; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x34.2 53; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x35.2 53; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x36.2 53; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x37.2 53; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x38.2 11; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x39.2 02; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x3a.2 00; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x3b.2 60; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x3c.2 7d; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x3d.2 fe; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x3e.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x3f.2 ff; "			\
++		"gpio set ${play_eeprom_wp_gpio}; "				\
++		"i2c md ${play_eeprom_i2c_addr} 0x00.2 40; "			\
++		"\0"								\
++	"play_eeprom_erase=i2c dev ${play_eeprom_i2c_dev}; "			\
++		"i2c md ${play_eeprom_i2c_addr} 0x00.2 40; "			\
++		"gpio clear ${play_eeprom_wp_gpio}; "				\
++		"i2c mw ${play_eeprom_i2c_addr} 0x00.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x01.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x02.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x03.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x04.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x05.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x06.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x07.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x08.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x09.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x0a.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x0b.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x0c.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x0d.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x0e.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x0f.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x10.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x11.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x12.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x13.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x14.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x15.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x16.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x17.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x18.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x19.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x1a.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x1b.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x1c.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x1d.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x1e.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x1f.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x20.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x21.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x22.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x23.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x24.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x25.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x26.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x27.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x28.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x29.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x2a.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x2b.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x2c.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x2d.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x2e.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x2f.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x30.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x31.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x32.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x33.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x34.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x35.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x36.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x37.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x38.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x39.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x3a.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x3b.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x3c.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x3d.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x3e.2 ff; "			\
++		"i2c mw ${play_eeprom_i2c_addr} 0x3f.2 ff; "			\
++		"gpio set ${play_eeprom_wp_gpio}; "				\
++		"i2c md ${play_eeprom_i2c_addr} 0x00.2 40; "			\
++		"\0"								\
++	"emmc_erase_boot0=mmc dev 0 1; "					\
++		"mmc erase 0 0x2400; "						\
++		"\0"								\
++
++#define BOOTENV_DEV_LINUX(devtypeu, devtypel, instance) \
++	"bootcmd_linux=" \
++		"if test \"${android_boot}\" -eq 0; then;" \
++			"run findfdt; run envboot; run init_${boot};" \
++			"if test ${boot_fit} -eq 1; then;" \
++				"run get_fit_${boot}; run get_fit_${boot}; run get_overlaystring; run run_fit;"\
++			"else;" \
++				"run get_kern_${boot}; run get_fdt_${boot}; run get_overlay_${boot}; run run_kern;" \
++			"fi;" \
++		"fi\0"
++
++#define BOOTENV_DEV_NAME_LINUX(devtypeu, devtypel, instance)	\
++		"linux "
++
++#if 0
++
++/* ANDROID BOOT */
++#ifndef BOOT_PARTITION
++#define BOOT_PARTITION "boot"
++#endif
++
++#ifndef CONTROL_PARTITION
++#define CONTROL_PARTITION "misc"
++#endif
++
++#if defined(CONFIG_CMD_AVB)
++#define AVB_VERIFY_CHECK \
++	"if test \"${force_avb}\" -eq 1; then " \
++		"if run avb_verify; then " \
++			"echo AVB verification OK.;" \
++			"setenv bootargs \"$bootargs $avb_bootargs\";" \
++		"else " \
++			"echo AVB verification failed.;" \
++		"exit; fi;" \
++	"else " \
++		"setenv bootargs \"$bootargs androidboot.verifiedbootstate=orange\";" \
++		"echo Running without AVB...; "\
++	"fi;"
++
++#define AVB_VERIFY_CMD "avb_verify=avb init ${mmcdev}; avb verify $slot_suffix;\0"
++#else
++#define AVB_VERIFY_CHECK ""
++#define AVB_VERIFY_CMD ""
++#endif
++
++#if defined(CONFIG_CMD_AB_SELECT)
++#define ANDROIDBOOT_GET_CURRENT_SLOT_CMD "get_current_slot=" \
++	"if part number mmc ${mmcdev} " CONTROL_PARTITION " control_part_number; " \
++	"then " \
++		"echo " CONTROL_PARTITION \
++			" partition number:${control_part_number};" \
++		"ab_select current_slot mmc ${mmcdev}:${control_part_number};" \
++	"else " \
++		"echo " CONTROL_PARTITION " partition not found;" \
++	"fi;\0"
++
++#define AB_SELECT_SLOT \
++	"run get_current_slot; " \
++	"if test -e \"${current_slot}\"; " \
++	"then " \
++		"setenv slot_suffix _${current_slot}; " \
++	"else " \
++		"echo current_slot not found;" \
++		"exit;" \
++	"fi;"
++
++#define AB_SELECT_ARGS \
++	"setenv bootargs_ab androidboot.slot_suffix=${slot_suffix}; " \
++	"echo A/B cmdline addition: ${bootargs_ab};" \
++	"setenv bootargs ${bootargs} ${bootargs_ab};"
++
++#define AB_BOOTARGS " androidboot.force_normal_boot=1"
++#define RECOVERY_PARTITION "boot"
++#else
++#define AB_SELECT_SLOT ""
++#define AB_SELECT_ARGS " "
++#define ANDROIDBOOT_GET_CURRENT_SLOT_CMD ""
++#define AB_BOOTARGS " "
++#define RECOVERY_PARTITION "recovery"
++#endif
++
++/*
++ * Prepares complete device tree blob for current board (for Android boot).
++ *
++ * Boot image or recovery image should be loaded into $loadaddr prior to running
++ * these commands. The logic of these commnads is next:
++ *
++ *   1. Read correct DTB for current SoC/board from boot image in $loadaddr
++ *      to $fdtaddr
++ *   2. Merge all needed DTBO for current board from 'dtbo' partition into read
++ *      DTB
++ *   3. User should provide $fdtaddr as 3rd argument to 'bootm'
++ */
++#define PREPARE_FDT \
++	"echo Preparing FDT...; " \
++	"if test $board_name = am62x_skevm; then " \
++		"echo \"  Reading DTB for am62x_skevm...\"; " \
++		"setenv dtb_index 0;" \
++	"elif test $board_name = am62x_lp_skevm; then " \
++		"echo \"  Reading DTB for am62x_lp_skevm...\"; " \
++		"setenv dtb_index 1;" \
++	"else " \
++		"echo Error: Android boot is not supported for $board_name; " \
++		"exit; " \
++	"fi; " \
++	"abootimg get dtb --index=$dtb_index dtb_start dtb_size; " \
++	"cp.b $dtb_start $fdt_addr_r $dtb_size; " \
++	"fdt addr $fdt_addr_r $fdt_size; " \
++	"part start mmc ${mmcdev} dtbo${slot_suffix} dtbo_start; " \
++	"part size mmc ${mmcdev} dtbo${slot_suffix} dtbo_size; " \
++	"mmc read ${dtboaddr} ${dtbo_start} ${dtbo_size}; " \
++	"echo \"  Applying DTBOs...\"; " \
++	"adtimg addr $dtboaddr; " \
++	"dtbo_idx=''; " \
++	"for index in $dtbo_index; do " \
++		"adtimg get dt --index=$index dtbo_addr; " \
++		"fdt resize; " \
++		"fdt apply $dtbo_addr; " \
++		"if test $dtbo_idx = ''; then " \
++			"dtbo_idx=${index}; " \
++		"else " \
++			"dtbo_idx=${dtbo_idx},${index}; " \
++		"fi; " \
++	"done; " \
++	"setenv bootargs \"$bootargs androidboot.dtbo_idx=$dtbo_idx \"; "
++
++
++#define BOOT_CMD "bootm ${loadaddr} ${loadaddr} ${fdt_addr_r};"
++
++#define BOOTENV_DEV_FASTBOOT(devtypeu, devtypel, instance) \
++	"bootcmd_fastboot=" \
++		"if test \"${android_boot}\" -eq 1; then;" \
++			"setenv run_fastboot 0;" \
++			"if gpt verify mmc ${mmcdev} ${partitions}; then; " \
++			"else " \
++				"echo Broken MMC partition scheme;" \
++				"setenv run_fastboot 1;" \
++			"fi; " \
++			"if test \"${run_fastboot}\" -eq 0; then " \
++				"if bcb load " __stringify(CONFIG_FASTBOOT_FLASH_MMC_DEV) " " \
++				CONTROL_PARTITION "; then " \
++					"if bcb test command = bootonce-bootloader; then " \
++						"echo BCB: Bootloader boot...; " \
++						"bcb clear command; bcb store; " \
++						"setenv run_fastboot 1;" \
++					"elif bcb test command = boot-fastboot; then " \
++						"echo BCB: fastboot userspace boot...; " \
++						"setenv force_recovery 1;" \
++					"fi; " \
++				"else " \
++					"echo Warning: BCB is corrupted or does not exist; " \
++				"fi;" \
++			"fi;" \
++			"if test \"${run_fastboot}\" -eq 1; then " \
++				"echo Running Fastboot...;" \
++				"fastboot " __stringify(CONFIG_FASTBOOT_USB_DEV) "; " \
++			"fi;" \
++		"fi\0"
++
++#define BOOTENV_DEV_NAME_FASTBOOT(devtypeu, devtypel, instance)	\
++		"fastboot "
++
++#define BOOTENV_DEV_RECOVERY(devtypeu, devtypel, instance) \
++	"bootcmd_recovery=" \
++		"if test \"${android_boot}\" -eq 1; then;" \
++			"setenv run_recovery 0;" \
++			"if bcb load " __stringify(CONFIG_FASTBOOT_FLASH_MMC_DEV) " " \
++			CONTROL_PARTITION "; then " \
++				"if bcb test command = boot-recovery; then; " \
++					"echo BCB: Recovery boot...; " \
++					"setenv run_recovery 1;" \
++				"fi;" \
++			"else " \
++				"echo Warning: BCB is corrupted or does not exist; " \
++			"fi;" \
++			"if test \"${skip_recovery}\" -eq 1; then " \
++				"echo Recovery skipped by environment;" \
++				"setenv run_recovery 0;" \
++			"fi;" \
++			"if test \"${force_recovery}\" -eq 1; then " \
++				"echo Recovery forced by environment;" \
++				"setenv run_recovery 1;" \
++			"fi;" \
++			"if test \"${run_recovery}\" -eq 1; then " \
++				"echo Running Recovery...;" \
++				"mmc dev ${mmcdev};" \
++				"setenv bootargs \"${bootargs} androidboot.serialno=${serial#}\";" \
++				AB_SELECT_SLOT \
++				AB_SELECT_ARGS \
++				AVB_VERIFY_CHECK \
++				"part start mmc ${mmcdev} " RECOVERY_PARTITION "${slot_suffix} boot_start;" \
++				"part size mmc ${mmcdev} " RECOVERY_PARTITION "${slot_suffix} boot_size;" \
++				"if mmc read ${loadaddr} ${boot_start} ${boot_size}; then " \
++					PREPARE_FDT \
++					"echo Running Android Recovery...;" \
++					BOOT_CMD \
++				"fi;" \
++				"echo Failed to boot Android...;" \
++				"reset;" \
++			"fi;" \
++		"fi\0"
++
++#define BOOTENV_DEV_NAME_RECOVERY(devtypeu, devtypel, instance)	\
++		"recovery "
++
++#define BOOTENV_DEV_SYSTEM(devtypeu, devtypel, instance) \
++	"bootcmd_system=" \
++		"if test \"${android_boot}\" -eq 1; then;" \
++			"echo Loading Android " BOOT_PARTITION " partition...;" \
++			"mmc dev ${mmcdev};" \
++			"setenv bootargs ${bootargs} androidboot.serialno=${serial#};" \
++			AB_SELECT_SLOT \
++			AB_SELECT_ARGS \
++			AVB_VERIFY_CHECK \
++			"part start mmc ${mmcdev} " BOOT_PARTITION "${slot_suffix} boot_start;" \
++			"part size mmc ${mmcdev} " BOOT_PARTITION "${slot_suffix} boot_size;" \
++			"if mmc read ${loadaddr} ${boot_start} ${boot_size}; then " \
++				PREPARE_FDT \
++				"setenv bootargs \"${bootargs} " AB_BOOTARGS "\"  ; " \
++				"echo Running Android...;" \
++				BOOT_CMD \
++			"fi;" \
++			"echo Failed to boot Android...;" \
++		"fi\0"
++
++#define BOOTENV_DEV_NAME_SYSTEM(devtypeu, devtypel, instance)	\
++		"system "
++
++#define BOOTENV_DEV_PANIC(devtypeu, devtypel, instance) \
++	"bootcmd_panic=" \
++		"if test \"${android_boot}\" -eq 1; then;" \
++			"fastboot " __stringify(CONFIG_FASTBOOT_USB_DEV) "; " \
++			"reset;" \
++		"fi\0"
++
++#define BOOTENV_DEV_NAME_PANIC(devtypeu, devtypel, instance)	\
++		"panic "
++
++#define EXTRA_ANDROID_ENV_SETTINGS                                     \
++	"set_android_boot=setenv android_boot 1;setenv partitions $partitions_android;setenv mmcdev 0;setenv force_avb 0;saveenv;\0" \
++	ANDROIDBOOT_GET_CURRENT_SLOT_CMD                              \
++	AVB_VERIFY_CMD                                                \
++	BOOTENV
++
++#define BOOT_TARGET_DEVICES(func) \
++	func(LINUX, linux, na) \
++	func(FASTBOOT, fastboot, na) \
++	func(RECOVERY, recovery, na) \
++	func(SYSTEM, system, na) \
++	func(PANIC, panic, na) \
++
++#else
++
++#define EXTRA_ANDROID_ENV_SETTINGS  ""
++
++#if CONFIG_IS_ENABLED(CMD_PXE)
++# define BOOT_TARGET_PXE(func) func(PXE, pxe, na)
++#else
++# define BOOT_TARGET_PXE(func)
++#endif
++
++#if CONFIG_IS_ENABLED(CMD_DHCP)
++# define BOOT_TARGET_DHCP(func) func(DHCP, dhcp, na)
++#else
++# define BOOT_TARGET_DHCP(func)
++#endif
++
++#define BOOT_TARGET_DEVICES(func) \
++	func(MMC, mmc, 1) \
++	func(MMC, mmc, 0) \
++	BOOT_TARGET_PXE(func) \
++	BOOT_TARGET_DHCP(func) \
++	func(LINUX, linux, na) \
++
++#endif
++
++#define EXTRA_ENV_DFUARGS \
++	DFU_ALT_INFO_MMC \
++	DFU_ALT_INFO_EMMC \
++	DFU_ALT_INFO_RAM \
++	DFU_ALT_INFO_OSPI
++
++/* Incorporate settings into the U-Boot environment */
++#define CONFIG_EXTRA_ENV_SETTINGS					\
++	EXTRA_ANDROID_ENV_SETTINGS					\
++	DEFAULT_LINUX_BOOT_ENV						\
++	DEFAULT_FIT_TI_ARGS						\
++	DEFAULT_MMC_TI_ARGS						\
++	EXTRA_ENV_AM625_BOARD_SETTINGS					\
++	EXTRA_ENV_AM625_BOARD_SETTINGS_MMC				\
++	EXTRA_ENV_DFUARGS						\
++	EXTRA_ENV_AM625_BOARD_SETTING_USBMSC				\
++	EXTRA_ENV_AM625_BEAGPLAY_PRODUCTION_BOARD_SETTINGS		\
++	BOOTENV
++
++/* Now for the remaining common defines */
++#include <configs/ti_armv7_common.h>
++
++/* MMC ENV related defines */
++#ifdef CONFIG_ENV_IS_IN_MMC
++#define CONFIG_SYS_MMC_ENV_DEV		0
++#define CONFIG_SYS_MMC_ENV_PART		1
++#endif
++
++#ifdef CONFIG_SYS_MALLOC_LEN
++#undef CONFIG_SYS_MALLOC_LEN
++#endif
++#define CONFIG_SYS_MALLOC_LEN           SZ_128M
++
++#endif /* __CONFIG_NOVA_H */
+-- 
+2.34.1
+
