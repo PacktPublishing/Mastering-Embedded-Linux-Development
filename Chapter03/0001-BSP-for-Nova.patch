@@ -1,16 +1,16 @@
-From 1bd1a760ce43b390641a67b550eb6fd2fe3450e5 Mon Sep 17 00:00:00 2001
+From a6f4ba8df52c3582a3a96bddc173864b41852875 Mon Sep 17 00:00:00 2001
 From: Frank Vasquez <frank.vasquez@gmail.com>
-Date: Sat, 24 Feb 2024 22:31:01 -0800
+Date: Sat, 24 Feb 2024 23:26:26 -0800
 Subject: [PATCH] BSP for Nova
 
 ---
  arch/arm/Kconfig       |   1 +
- board/ti/nova/Kconfig  |  63 +++++
+ board/ti/nova/Kconfig  |  33 +++
  board/ti/nova/Makefile |   8 +
  board/ti/nova/nova.c   | 268 ++++++++++++++++++
- configs/nova_defconfig | 196 +++++++++++++
+ configs/nova_defconfig | 195 +++++++++++++
  include/configs/nova.h | 609 +++++++++++++++++++++++++++++++++++++++++
- 6 files changed, 1145 insertions(+)
+ 6 files changed, 1114 insertions(+)
  create mode 100644 board/ti/nova/Kconfig
  create mode 100644 board/ti/nova/Makefile
  create mode 100644 board/ti/nova/nova.c
@@ -31,10 +31,10 @@ index fbe90875ae..3e0c5691ae 100644
  source "board/vscom/baltos/Kconfig"
 diff --git a/board/ti/nova/Kconfig b/board/ti/nova/Kconfig
 new file mode 100644
-index 0000000000..3624563e86
+index 0000000000..5577a6c0a7
 --- /dev/null
 +++ b/board/ti/nova/Kconfig
-@@ -0,0 +1,63 @@
+@@ -0,0 +1,33 @@
 +# SPDX-License-Identifier: GPL-2.0+
 +#
 +# Copyright (C) 2020-2022 Texas Instruments Incorporated - https://www.ti.com/
@@ -52,18 +52,6 @@ index 0000000000..3624563e86
 +	imply SPL_BOARD
 +	imply TI_I2C_BOARD_DETECT
 +
-+config TARGET_AM625_R5_EVM
-+	bool "Nova! board running on R5"
-+	select CPU_V7R
-+	select SYS_THUMB_BUILD
-+	select K3_LOAD_SYSFW
-+	select SOC_K3_AM625
-+	select RAM
-+	select SPL_RAM
-+	select K3_DDRSS
-+	imply SYS_K3_SPL_ATF
-+	imply TI_I2C_BOARD_DETECT
-+
 +endchoice
 +
 +if TARGET_NOVA
@@ -76,24 +64,6 @@ index 0000000000..3624563e86
 +
 +config SYS_CONFIG_NAME
 +       default "nova"
-+
-+source "board/ti/common/Kconfig"
-+
-+endif
-+
-+if TARGET_AM625_R5_EVM
-+
-+config SYS_BOARD
-+       default "am62x"
-+
-+config SYS_VENDOR
-+       default "ti"
-+
-+config SYS_CONFIG_NAME
-+       default "am62x_evm"
-+
-+config SPL_LDSCRIPT
-+	default "arch/arm/mach-omap2/u-boot-spl.lds"
 +
 +source "board/ti/common/Kconfig"
 +
@@ -388,10 +358,10 @@ index 0000000000..aced7da387
 +#endif
 diff --git a/configs/nova_defconfig b/configs/nova_defconfig
 new file mode 100644
-index 0000000000..8e4fe47fd7
+index 0000000000..c39a0dc21d
 --- /dev/null
 +++ b/configs/nova_defconfig
-@@ -0,0 +1,196 @@
+@@ -0,0 +1,195 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_K3=y
 +CONFIG_TI_SECURE_DEVICE=y
@@ -403,7 +373,6 @@ index 0000000000..8e4fe47fd7
 +CONFIG_NR_DRAM_BANKS=2
 +CONFIG_SOC_K3_AM625=y
 +CONFIG_K3_ATF_LOAD_ADDR=0x9e780000
-+CONFIG_TARGET_AM625_A53_EVM=y
 +CONFIG_TARGET_NOVA=y
 +CONFIG_ENV_SIZE=0x20000
 +CONFIG_ENV_OFFSET=0x680000
@@ -590,7 +559,7 @@ index 0000000000..8e4fe47fd7
 +CONFIG_OF_LIBFDT_OVERLAY=y
 diff --git a/include/configs/nova.h b/include/configs/nova.h
 new file mode 100644
-index 0000000000..b1f423dedb
+index 0000000000..4fa02dd347
 --- /dev/null
 +++ b/include/configs/nova.h
 @@ -0,0 +1,609 @@
@@ -621,7 +590,7 @@ index 0000000000..b1f423dedb
 +#define CONFIG_SPL_FS_LOAD_PAYLOAD_NAME	"tispl.bin"
 +#endif
 +
-+#if defined(CONFIG_TARGET_AM625_A53_EVM)
++#if defined(CONFIG_TARGET_NOVA)
 +#define CONFIG_SPL_MAX_SIZE		SZ_1M
 +#define CONFIG_SYS_INIT_SP_ADDR         (CONFIG_SPL_TEXT_BASE + SZ_4M)
 +#else
