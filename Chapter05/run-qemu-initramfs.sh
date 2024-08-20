@@ -1,10 +1,16 @@
 #!/bin/bash
+# Copy this script to and run it from your linux-stable directory
 
 KERNEL=arch/arm64/boot/Image
-INITRAMFS=initramfs.cpio.gz
+INITRAMFS=${HOME}/initramfs.cpio.gz
 
 if [ ! -f ${KERNEL} ]; then
 	echo "${KERNEL} does not exist"
+	exit 1
+fi
+
+if [ ! -f ${INITRAMFS} ]; then
+	echo "${INITRAMFS} does not exist"
 	exit 1
 fi
 
