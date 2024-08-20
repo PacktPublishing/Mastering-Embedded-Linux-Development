@@ -1,18 +1,21 @@
 #!/bin/bash
-# Replace 2023.08-1 with the actual version of your Bootlin toolchain
+# Replace 2024.02-1 with the actual version of your Bootlin toolchain
 
 set -e
 
-git clone --depth=1 -b rpi-6.1.y https://github.com/raspberrypi/linux.git
-svn export https://github.com/raspberrypi/firmware/trunk/boot
+$ git clone --depth=1 -b rpi-6.6.y https://github.com/raspberrypi/linux.git linux-rpi
+$ git clone --depth=1 -b 1.20240529 https://github.com/raspberrypi/firmware.git firmware-rpi
+
+mv firmware-rpi/boot .
+rm -rf firmware-rpi
 
 rm boot/kernel*
 rm boot/*.dtb
 rm boot/overlays/*.dtbo
 
-PATH=${HOME}/aarch64--glibc--stable-2023.08-1/bin/:$PATH
+PATH=${HOME}/aarch64--glibc--stable-2024.02-1/bin/:$PATH
 
-cd linux
+cd linux-rpi
 
 make ARCH=arm64 CROSS_COMPILE=aarch64-buildroot-linux-gnu- bcm2711_defconfig
 make -j4 ARCH=arm64 CROSS_COMPILE=aarch64-buildroot-linux-gnu-
