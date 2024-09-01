@@ -12,6 +12,11 @@ if [ ! -f ${KERNEL} ]; then
     exit 1
 fi
 
+if [ ! -f ${ROOTDIR} ]; then
+    echo "${ROOTDIR} does not exist"
+    exit 1
+fi
+
 sudo tunctl -u $(whoami) -t tap0
 sudo ifconfig tap0 ${HOST_IP}
 sudo route add -net ${NET_NUMBER} netmask ${NET_MASK} dev tap0
