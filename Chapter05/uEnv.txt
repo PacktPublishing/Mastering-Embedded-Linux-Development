@@ -1,5 +1,0 @@
-serverip=192.168.1.1
-ipaddr=192.168.1.101
-npath=/home/frank/rootfs
-bootargs=console=ttyS2,115200n8 root=/dev/nfs rw nfsroot=${serverip}:${npath},v3 ip=${ipaddr}
-uenvcmd=fatload mmc 0:1 0x80000000 Image.gz;fatload mmc 0:1 0x82000000 k3-am625-beagleplay.dtb;booti 0x80000000 - 0x82000000
