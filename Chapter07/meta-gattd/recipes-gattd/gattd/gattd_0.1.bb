@@ -1,6 +1,6 @@
 DESCRIPTION = "Python BLE GATT server"
 HOMEPAGE = "https://github.com/fvasquez/gattd"
-LICENSE = "GPLv2"
+LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=c53d04442d1a229d62549856b7ec456a"
 
 SRC_URI = "https://github.com/fvasquez/gattd/archive/v${PV}.tar.gz"
