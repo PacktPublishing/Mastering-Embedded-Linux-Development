@@ -1,0 +1,11 @@
+#!/usr/sbin/ply
+
+kprobe:do_sys_openat2
+{
+    path[kpid] = str(arg1);
+}
+
+kretprobe:do_sys_openat2
+{
+    printf("%v %v %v :%d\n", pid, comm, path[kpid], retval);
+}

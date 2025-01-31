@@ -1,0 +1,10 @@
+config BR2_PACKAGE_EBPF
+	bool "ebpf"
+	select BR2_PACKAGE_DROPBEAR
+	select BR2_PACKAGE_TMUX
+	select BR2_PACKAGE_VIM
+	select BR2_PACKAGE_BPFTOOL
+	select BR2_PACKAGE_PLY
+	select BR2_PACKAGE_REDIS
+	help
+	  An image overlay that includes ply for dynamic tracing

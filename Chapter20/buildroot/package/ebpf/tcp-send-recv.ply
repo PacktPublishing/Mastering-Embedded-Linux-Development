@@ -1,0 +1,11 @@
+#!/usr/sbin/ply
+
+kprobe:tcp_sendmsg
+{
+    @[comm, "send"] = count();
+}
+
+kprobe:tcp_recvmsg
+{
+    @[comm, "recv"] = count();
+}

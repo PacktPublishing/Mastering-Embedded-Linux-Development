@@ -1,0 +1,6 @@
+#!/usr/sbin/ply
+
+kprobe:__se_sys_*
+{
+    @syscalls[caller] = count();
+}

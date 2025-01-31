@@ -1,0 +1,7 @@
+#!/usr/sbin/ply
+
+kprobe:sys_brk
+{
+    @["alloc size"] = quantize(arg0 - heaps[comm, kpid]);
+    heaps[comm, kpid] = arg0;
+}

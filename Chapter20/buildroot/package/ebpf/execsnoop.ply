@@ -1,0 +1,9 @@
+#!/usr/sbin/ply
+
+kprobe:sys_execve {
+    execs[kpid] = str(arg0, 48);
+}
+
+kretprobe:sys_execve {
+    printf("(%4u) %v %3ld\n", uid, execs[kpid], retval);
+}
