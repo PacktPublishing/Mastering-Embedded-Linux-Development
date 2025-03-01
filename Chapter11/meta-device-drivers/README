@@ -1,4 +1,4 @@
-This README file contains information on the contents of the user-space layer.
+This README file contains information on the contents of the device-drivers layer.
 
 Please see the corresponding sections below for details.
 
@@ -18,7 +18,7 @@ Dependencies
 Patches
 =======
 
-Please submit any patches against the user-space layer to the xxxx mailing list (xxxx@zzzz.org)
+Please submit any patches against the device-drivers layer to the xxxx mailing list (xxxx@zzzz.org)
 and cc: the maintainer:
 
 Maintainer: XXX YYYYYY <xxx.yyyyyy@zzzzz.com>
@@ -26,16 +26,16 @@ Maintainer: XXX YYYYYY <xxx.yyyyyy@zzzzz.com>
 Table of Contents
 =================
 
-  I. Adding the user-space layer to your build
+  I. Adding the device-drivers layer to your build
  II. Misc
 
 
-I. Adding the user-space layer to your build
+I. Adding the device-drivers layer to your build
 =================================================
 
-Run 'bitbake-layers add-layer user-space'
+Run 'bitbake-layers add-layer device-drivers'
 
 II. Misc
 ========
 
---- replace with specific information about the user-space layer ---
+--- replace with specific information about the device-drivers layer ---
