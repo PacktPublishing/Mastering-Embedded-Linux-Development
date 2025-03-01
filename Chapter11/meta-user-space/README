@@ -1,0 +1,41 @@
+This README file contains information on the contents of the user-space layer.
+
+Please see the corresponding sections below for details.
+
+Dependencies
+============
+
+  URI: <first dependency>
+  branch: <branch name>
+
+  URI: <second dependency>
+  branch: <branch name>
+
+  .
+  .
+  .
+
+Patches
+=======
+
+Please submit any patches against the user-space layer to the xxxx mailing list (xxxx@zzzz.org)
+and cc: the maintainer:
+
+Maintainer: XXX YYYYYY <xxx.yyyyyy@zzzzz.com>
+
+Table of Contents
+=================
+
+  I. Adding the user-space layer to your build
+ II. Misc
+
+
+I. Adding the user-space layer to your build
+=================================================
+
+Run 'bitbake-layers add-layer user-space'
+
+II. Misc
+========
+
+--- replace with specific information about the user-space layer ---
