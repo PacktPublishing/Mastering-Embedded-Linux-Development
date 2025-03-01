@@ -57,7 +57,6 @@ static ssize_t dummy_write(struct file *file, const char *buffer, size_t length,
 }
 
 struct file_operations dummy_fops = {
-    .owner = THIS_MODULE,
     .open = dummy_open,
     .release = dummy_release,
     .read = dummy_read,
@@ -76,7 +75,7 @@ int __init dummy_init(void)
         return ret;
     }
 
-    dummy_class = class_create(THIS_MODULE, DEVICE_NAME);
+    dummy_class = class_create(DEVICE_NAME);
 
     for (i = 0; i < NUM_DEVICES; i++) {
         device_create(dummy_class, NULL, MKDEV(MAJOR_NUM, i), NULL, "dummy%d", i);
