@@ -1,10 +1,8 @@
 /* Copyright (C) 2017, Chris Simmonds (chris@2net.co.uk) */
 
 /*
- * Sample program to read the first 4 bytes of the AT24C512B
- * 512 KiB EEPROM from the BeagleBone Black
- * The datasheet for the AT24C512B can be found at
- * http://www.atmel.com/Images/doc5297.pdf
+ * Sample program to read the first four bytes of the 
+ * FT24C32A-ELR-T EEPROM from the BeaglePlay
  */
 
 #include <stdio.h>
@@ -13,7 +11,7 @@
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h>
 
-/* Address of the EEPROM on the BeagleBone Black board */
+/* Address of the EEPROM on the BeaglePlay board */
 #define I2C_ADDRESS 0x50
 
 int main(void)
@@ -53,7 +51,7 @@ int main(void)
         return 1;
     }
 
-    printf("0x%x 0x%x0 0x%x 0x%x\n", buf[0], buf[1], buf[2], buf[3]);
+    printf("0x%x 0x%x 0x%x 0x%x\n", buf[0], buf[1], buf[2], buf[3]);
 
     close(f);
 

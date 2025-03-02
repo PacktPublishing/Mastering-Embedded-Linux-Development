@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, Frank Vasquez (frank.vasquez@gmail.com) */
+/* Copyright (C) 2025, Frank Vasquez (frank.vasquez@gmail.com) */
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -9,17 +9,14 @@
 /*
  * Demonstration of using epoll(2) to wait for an interrupt on GPIO.
  *
- * To try this out on a BeagleBone Black, connect a push button switch
- * between P9 15 (gpio1_16) and P9 1 (ground).
- *
- * gpio1_15 is configured as gpio 48, so to make it an input which
+ * USR_BUTTON is configured as gpio 557, so to make it an input which
  * triggers on a falling edge, write
  *
- * echo 48 > /sys/class/gpio/export
- * echo falling > /sys/class/gpio/gpio48/edge
+ * echo 557 > /sys/class/gpio/export
+ * echo falling > /sys/class/gpio/gpio557/edge
  *
- * Now, the gpio1_15 pin is normally pulled high, so
- * /sys/class/gpio48/value reads as 1'.
+ * Now, the USR_BUTTON pin is normally pulled high, so
+ * /sys/class/gpio557/value reads as 1'.
  * Pushing the button takes it low, and value reads as '0'.
  *
  * This program waits for the level to fall from 1 to 0 and
@@ -42,10 +39,10 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    f = open("/sys/class/gpio/gpio48/value", O_RDONLY | O_NONBLOCK);
+    f = open("/sys/class/gpio/gpio557/value", O_RDONLY | O_NONBLOCK);
 
     if (f == -1) {
-        perror("Can't open gpio48");
+        perror("Can't open gpio557");
         return 1;
     }
 
