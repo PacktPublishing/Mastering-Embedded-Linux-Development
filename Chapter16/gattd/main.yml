@@ -15,7 +15,7 @@ jobs:
     steps:
       # 1) Check out the code
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # 2) Log in to GitHub Container Registry
       - name: Log in to GHCR
