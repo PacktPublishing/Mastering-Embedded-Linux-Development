@@ -1,18 +1,27 @@
-#!/usr/bin/env python3
-
 """Example using zmq with asyncio coroutines"""
+
 # Copyright (c) PyZMQ Developers.
 # This example is in the public domain (CC-0)
 
+import asyncio
 import time
+
 import zmq
 from zmq.asyncio import Context, Poller
-import asyncio
 
 url = 'inproc://#1'
+
 ctx = Context.instance()
 
-async def receiver():
+
+async def ping() -> None:
+    """print dots to indicate idleness"""
+    while True:
+        await asyncio.sleep(0.5)
+        print('.')
+
+
+async def receiver() -> None:
     """receive messages with polling"""
     pull = ctx.socket(zmq.PAIR)
     pull.connect(url)
@@ -25,7 +34,8 @@ async def receiver():
             msg = await pull.recv_multipart()
             print('recvd', msg)
 
-async def sender():
+
+async def sender() -> None:
     """send a message every second"""
     tic = time.time()
     push = ctx.socket(zmq.PAIR)
@@ -35,11 +45,11 @@ async def sender():
         await push.send_multipart([str(time.time() - tic).encode('ascii')])
         await asyncio.sleep(1)
 
-asyncio.get_event_loop().run_until_complete(
-    asyncio.wait(
-        [
-            receiver(),
-            sender(),
-        ]
-    )
-)
+
+async def main() -> None:
+    tasks = [asyncio.create_task(coroutine()) for coroutine in [ping, receiver, sender]]
+    await asyncio.wait(tasks)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
