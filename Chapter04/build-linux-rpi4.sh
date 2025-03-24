@@ -17,12 +17,12 @@ PATH=${HOME}/aarch64--glibc--stable-2024.02-1/bin/:$PATH
 
 cd linux-rpi
 
-make ARCH=arm64 CROSS_COMPILE=aarch64-buildroot-linux-gnu- bcm2711_defconfig
-make -j4 ARCH=arm64 CROSS_COMPILE=aarch64-buildroot-linux-gnu-
+make ARCH=arm64 CROSS_COMPILE=aarch64-buildroot-linux-gnu- bcm2711_defconfig O=../build_rpi
+make -j4 ARCH=arm64 CROSS_COMPILE=aarch64-buildroot-linux-gnu- O=../build_rpi
 
-cp arch/arm64/boot/Image ../boot/kernel8.img
-cp arch/arm64/boot/dts/overlays/*.dtbo ../boot/overlays/
-cp arch/arm64/boot/dts/broadcom/*.dtb ../boot/
+cp ../build_rpi/arch/arm64/boot/Image ../boot/kernel8.img
+cp ../build_rpi/arch/arm64/boot/dts/overlays/*.dtbo ../boot/overlays/
+cp ../build_rpi/arch/arm64/boot/dts/broadcom/*.dtb ../boot/
 
 cat << EOF > ../boot/config.txt
 enable_uart=1
