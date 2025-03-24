@@ -16,6 +16,7 @@ rm boot/overlays/*.dtbo
 PATH=${HOME}/aarch64--glibc--stable-2024.02-1/bin/:$PATH
 
 cd linux-rpi
+mkdir ../build_rpi
 
 make ARCH=arm64 CROSS_COMPILE=aarch64-buildroot-linux-gnu- bcm2711_defconfig O=../build_rpi
 make -j4 ARCH=arm64 CROSS_COMPILE=aarch64-buildroot-linux-gnu- O=../build_rpi
