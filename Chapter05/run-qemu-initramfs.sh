@@ -1,6 +1,6 @@
 #!/bin/bash
 
-KERNEL=${HOME}/linux-stable/arch/arm64/boot/Image
+KERNEL=${HOME}/build_qemu/arch/arm64/boot/Image
 INITRAMFS=${HOME}/initramfs.cpio.gz
 
 if [ ! -f ${KERNEL} ]; then

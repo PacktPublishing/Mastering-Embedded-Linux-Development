@@ -1,6 +1,6 @@
 #!/bin/bash
 
-KERNEL=${HOME}/linux-stable/arch/arm64/boot/Image
+KERNEL=${HOME}/build_qemu/arch/arm64/boot/Image
 ROOTDIR=${HOME}/rootfs
 HOST_IP=192.168.1.1
 TARGET_IP=192.168.1.101
