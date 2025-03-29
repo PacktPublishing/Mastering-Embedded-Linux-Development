@@ -1,8 +1,8 @@
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR aarch64)
 # set toolchain path
-set(sysroot_target /opt/poky/3.1.4/sysroots/aarch64-poky-linux)
-set(tools /opt/poky/3.1.4/sysroots/x86_64-pokysdk-linux/usr/bin/aarch64-poky-linux)
+set(sysroot_target /opt/poky/5.0.8/sysroots/cortexa72-poky-linux)
+set(tools /opt/poky/5.0.8/sysroots/x86_64-pokysdk-linux/usr/bin/aarch64-poky-linux)
 set(CMAKE_C_COMPILER ${tools}/aarch64-poky-linux-gcc)
 set(CMAKE_CXX_COMPILER ${tools}/aarch64-poky-linux-g++)
 set(CMAKE_SYSROOT ${sysroot_target})
