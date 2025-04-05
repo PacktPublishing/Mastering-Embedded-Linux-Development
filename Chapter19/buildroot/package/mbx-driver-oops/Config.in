@@ -1,0 +1,3 @@
+config BR2_PACKAGE_MBX_DRIVER_OOPS
+	bool "mbx_driver_oops"
+	depends on BR2_LINUX_KERNEL
