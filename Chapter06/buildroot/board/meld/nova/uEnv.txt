@@ -1,7 +1,0 @@
-bootpart=0:1
-bootdir=/
-bootargs=console=ttyS2,115200n8 root=/dev/mmcblk0p2 rw rootfstype=ext4 rootwait
-devtype=mmc
-kernel_comp_addr_r=0x85000000
-kernel_comp_size=0x2000000
-uenvcmd=fatload mmc 0:1 0x80000000 Image.gz; fatload mmc 0:1 0x82000000 nova.dtb; booti 0x80000000 - 0x82000000
