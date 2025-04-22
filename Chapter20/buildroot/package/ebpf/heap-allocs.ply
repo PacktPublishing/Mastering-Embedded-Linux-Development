@@ -1,7 +1,6 @@
 #!/usr/sbin/ply
 
-kprobe:sys_brk
+kprobe:__arm64_sys_brk
 {
-    @["alloc size"] = quantize(arg0 - heaps[comm, kpid]);
-    heaps[comm, kpid] = arg0;
+    @heap_allocs[comm, kpid] = count();
 }

@@ -1,6 +1,6 @@
 #!/usr/sbin/ply
 
-kprobe:__se_sys_*
+kprobe:__arm64_sys_*
 {
     @syscalls[caller] = count();
 }
