@@ -53,5 +53,5 @@ With the following software and hardware you can run all of the code examples pr
 
 ### Download a free PDF
 
-<i>If you have already purchased a print or Kindle version of this book, you can get a DRM-free PDF version at no extra cost.<br>Simply click on the link to claim your free PDF.</i>
+<i>If you have already purchased a print or Kindle version of this book, you can get a DRM-free PDF version at no extra cost. Simply click on the link to claim your free PDF.</i>
 <p align="center"> <a href="https://packt.link/free-ebook/9781803232591">https://packt.link/free-ebook/9781803232591</a></p>
