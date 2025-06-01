@@ -28,7 +28,7 @@ if (test expression)
 ```
 
 **Following is what you need for this book:**
-If youâ€™re a software engineer or system administrator who wants to learn how to run Linux on embedded devices, then this book is for you. Firmware engineers accustomed to programming for low-power microcontrollers can use this book to help make the leap to high-speed systems on chips that can run Linux. Anyone responsible for developing new hardware that needs to run Linux will also find this book useful. Basic working knowledge of the POSIX standard, C programming, Python programming, and shell scripting is assumed.
+If you're a software engineer or system administrator who wants to learn how to run Linux on embedded devices, then this book is for you. Firmware engineers accustomed to programming for low-power microcontrollers can use this book to help make the leap to high-speed systems on chips that can run Linux. Anyone responsible for developing new hardware that needs to run Linux will also find this book useful. Basic working knowledge of the POSIX standard, C programming, Python programming, and shell scripting is assumed.
 
 With the following software and hardware you can run all of the code examples present in the book (Chapters 1-21).
 
