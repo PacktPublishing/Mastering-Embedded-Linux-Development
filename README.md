@@ -16,7 +16,7 @@ This book covers the following exciting topics:
 
 If you feel this book is for you, get your [copy](https://www.amazon.com/dp/1803232595) today!
 
-## Instructions and Navigations
+## Instructions and navigation
 All of the code is organized into folders. For example, `Chapter02`.
 
 The code will look like the following:
@@ -27,12 +27,12 @@ if (test expression)
 }
 ```
 
-**Following is what you need for this book:**
+## What do you need for this book?
 If you're a software engineer or system administrator who wants to learn how to run Linux on embedded devices, then this book is for you. Firmware engineers accustomed to programming for low-power microcontrollers can use this book to help make the leap to high-speed systems on chips that can run Linux. Anyone responsible for developing new hardware that needs to run Linux will also find this book useful. Basic working knowledge of the POSIX standard, C programming, Python programming, and shell scripting is assumed.
 
 With the following software and hardware you can run all of the code examples present in the book (Chapters 1-21).
 
-### Software and Hardware List
+### Software and hardware list
 
 | Chapters                    | Software/Hardware Required          | OS Required              |
 | --------------------------- | ----------------------------------- | ------------------------ |
@@ -46,7 +46,7 @@ With the following software and hardware you can run all of the code examples pr
 | 3, 4, 5                     | U-Boot v2024.04                     | Ubuntu Desktop 24.04 LTS |
 | 4, 5                        | Linux Kernel 6.6                    | Ubuntu Desktop 24.04 LTS |
 
-## Get to Know the Authors
+## Get to know the authors
 **Frank Vasquez** is an independent software consultant specializing in consumer electronics. He has more than a decade of experience designing and building embedded Linux systems. During that time, he has shipped numerous products, including a rackmount DSP audio server, a diver-held sonar camcorder, an IoT hotspot, a home battery, and a grid-scale energy storage system. Since the third edition of this book was published, Frank has also become a frequent speaker at open-source software conferences including The Yocto Project Summit, Embedded Linux Conference, FOSDEM, and All Systems Go!
 
 **Chris Simmonds** is a software consultant and trainer living in southern England. He has over two decades of experience designing and building open-source embedded systems. He is the founder and chief consultant at 2net Ltd, which provides professional training and mentoring services in embedded Linux, Linux device drivers, and Android platform development. He has trained engineers at many of the biggest companies in the embedded world, including Arm, Qualcomm, Intel, Ericsson, and General Dynamics. He is a frequent presenter at open-source and embedded conferences, including the Embedded Linux Conference and Embedded World.
