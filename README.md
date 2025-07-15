@@ -46,6 +46,20 @@ With the following software and hardware you can run all of the code examples pr
 | 3, 4, 5                     | U-Boot v2024.04                     | Ubuntu Desktop 24.04 LTS |
 | 4, 5                        | Linux Kernel 6.6                    | Ubuntu Desktop 24.04 LTS |
 
+## Errata
+
+**Page 15**: I recommend using Ubuntu 24.04 LTS as your development host environment throughout the course of the book. However, I failed to mention that you need an x86-64 version of Ubuntu for the exercises the work verbatim. If you are on Apple Silicon, you can achieve that by creating an x86-64 Ubuntu VM. Select "with Rosetta" when creating your Ubuntu VM under Parallels.
+
+**Page 68**: Cloning TI's `k3-image-gen` Git repo fails with `Fatal: unable to connect to git.ti.com`. Clone `k3-image-gen` from BeagleBoard's GitHub mirror instead.
+
+```bash
+$ cd ~
+$ git clone https://github.com/beagleboard/k3-image-gen.git
+$ cd k3-image-gen
+$ git checkout 150f195
+```
+**Page 452**: The version of Docker bundled with the `docker.io` package is severely outdated. Install `docker-ce` instead. See dockerdocs for [instructions](https://docs.docker.com/engine/install/ubuntu/) on how to uninstall old versions and install the official version of Docker.
+
 ## Get to know the authors
 **Frank Vasquez** is an independent software consultant specializing in consumer electronics. He has more than a decade of experience designing and building embedded Linux systems. During that time, he has shipped numerous products, including a rackmount DSP audio server, a diver-held sonar camcorder, an IoT hotspot, a home battery, and a grid-scale energy storage system. Since the third edition of this book was published, Frank has also become a frequent speaker at open-source software conferences including The Yocto Project Summit, Embedded Linux Conference, FOSDEM, and All Systems Go!
 
