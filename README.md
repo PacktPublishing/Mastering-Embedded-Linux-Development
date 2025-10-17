@@ -50,7 +50,16 @@ With the following software and hardware you can run all of the code examples pr
 
 **Page 15**: I recommend using Ubuntu 24.04 LTS as your development host environment throughout the course of the book. However, I failed to mention that you need an x86-64 version of Ubuntu for the exercises the work verbatim. If you are on Apple Silicon, you can achieve that by creating an x86-64 Ubuntu VM. Select "with Rosetta" when creating your Ubuntu VM under Parallels.
 
-**Page 68**: Cloning TI's `k3-image-gen` Git repo fails with `Fatal: unable to connect to git.ti.com`. Clone `k3-image-gen` from BeagleBoard's GitHub mirror instead.
+**Page 68**: Cloning TI's `ti-linux-firmware` Git repo hangs indefinitely because the URL has changed. Clone `ti-linux-firmware` from its new location instead.
+
+```bash
+$ cd ~
+$ git clone https://github.com/TexasInstruments/ti-linux-firmware.git
+$ cd ti-linux-firmware
+$ git checkout c126d386
+```
+
+Cloning TI's `k3-image-gen` Git repo fails with `Fatal: unable to connect to git.ti.com`. Clone `k3-image-gen` from BeagleBoard's GitHub mirror instead.
 
 ```bash
 $ cd ~
@@ -58,6 +67,7 @@ $ git clone https://github.com/beagleboard/k3-image-gen.git
 $ cd k3-image-gen
 $ git checkout 150f195
 ```
+
 **Page 452**: The version of Docker bundled with the `docker.io` package is severely outdated. Install `docker-ce` instead. See dockerdocs for [instructions](https://docs.docker.com/engine/install/ubuntu/) on how to uninstall old versions and install the official version of Docker.
 
 ## Get to know the authors
