@@ -1,7 +1,7 @@
 #!/bin/sh
 BOARD_DIR="$(dirname $0)"
 
-cp ${BUILD_DIR}/ti-k3-r5-loader-2022.10/tiboot3.bin $BINARIES_DIR/tiboot3.bin
+cp ${BUILD_DIR}/ti-k3-image-gen-08.06.00.007/tiboot3-am62x-gp-evm.bin $BINARIES_DIR/tiboot3.bin
 
 GENIMAGE_CFG="${BOARD_DIR}/genimage.cfg" GENIMAGE_TMP="${BUILD_DIR}/genimage.tmp"
 
