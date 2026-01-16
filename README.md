@@ -98,6 +98,12 @@ BR2_TARGET_UBOOT_BOARD_DEFCONFIG="nova"
 
 U-Boot was being built for the wrong target board, so you would not see the expected `nova =>` prompt on the serial console.
 
+**Page 185**: Cloning the `meta-ti` layer ultimately fails with `remote: Repository not found` because the URL has changed. Clone `meta-ti` from its new location instead.
+
+```bash
+$ git clone -b scarthgap https://github.com/TexasInstruments/meta-ti.git
+```
+
 **Page 452**: The version of Docker bundled with the `docker.io` package is severely outdated. Install `docker-ce` instead. See dockerdocs for [instructions](https://docs.docker.com/engine/install/ubuntu/) on how to uninstall old versions and install the official version of Docker.
 
 ## Get to know the authors
