@@ -70,6 +70,34 @@ $ git checkout 150f195
 
 **Page 159**: The Linux kernel needs to be recompiled without a built-in `initramfs` for the BeaglePlay to mount the root filesystem using NFS. There are two ways to extract `initramfs` from the Linux kernel built earlier in Chapter 5. The quickest is to modify the BeaglePlay's kernel config by running `make menuconfig O=../build_beagleplay` and deleting `CONFIG_INITRAMFS_SOURCE`. Alternatively, go back to Chapter 4 and build the BeaglePlay's kernel from scratch according to the instructions starting on page 113. When applying the quick fix, do not forget to rebuild the BeaglePlay's kernel by running `make -j<n> O=../build_beagleplay`. Replace `<n>` after `make -j` with the number of CPU cores available on your host machine to speed up your build.
 
+**Page 175**: The `post-image.sh` and `nova_defconfig` that I provided in `Chapter06/buildroot/` contained two errors that have since been corrected. I replaced the following line in `Chapter06/buildroot/board/meld/nova/post-image.sh`:
+
+```
+cp ${BUILD_DIR}/ti-k3-r5-loader-2022.10/tiboot3.bin $BINARIES_DIR/tiboot3.bin
+```
+
+with:
+
+```
+cp ${BUILD_DIR}/ti-k3-image-gen-08.06.00.007/tiboot3-am62x-gp-evm.bin $BINARIES_DIR/tiboot3.bin
+```
+
+The BeaglePlay would not boot into U-Boot with the previous `tiboot3.bin`. All you would see is a blank serial console when holding down the USR button.
+
+I also replaced the following line in `Chapter06/buildroot/configs/nova_defconfig`:
+
+```
+BR2_TARGET_UBOOT_BOARD_DEFCONFIG="am62x_evm_a53"
+```
+
+with:
+
+```
+BR2_TARGET_UBOOT_BOARD_DEFCONFIG="nova"
+```
+
+U-Boot was being built for the wrong target board, so you would not see the expected `nova =>` prompt on the serial console.
+
 **Page 452**: The version of Docker bundled with the `docker.io` package is severely outdated. Install `docker-ce` instead. See dockerdocs for [instructions](https://docs.docker.com/engine/install/ubuntu/) on how to uninstall old versions and install the official version of Docker.
 
 ## Get to know the authors
