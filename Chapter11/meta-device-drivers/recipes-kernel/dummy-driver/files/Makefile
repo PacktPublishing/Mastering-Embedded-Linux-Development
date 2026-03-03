@@ -1,4 +1,4 @@
-obj-m := dummy.o
+obj-m := dummy-char.o
 
 SRC := $(shell pwd)
 
