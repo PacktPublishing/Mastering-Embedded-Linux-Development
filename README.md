@@ -106,6 +106,52 @@ U-Boot was being built for the wrong target board, so you would not see the expe
 $ git clone -b scarthgap https://github.com/TexasInstruments/meta-ti.git
 ```
 
+**Page 344**: The `build-beagleplay` directory mentioned in Steps 3 and 4 does not exist. The correct directory name is `build-nova`. Even though the command shown in Step 3 does not result in an immediate error, it does the wrong thing (creates a new `build-beagleplay` directory that defaults to `qemux86-64` as `MACHINE`). First, locate or recreate the `build-nova` directory from Chapter 6. 
+
+Then, execute:
+
+```bash
+$ source poky/oe-init-build-env build-beagleplay
+```
+
+instead of:
+
+```bash
+$ source poky/oe-init-build-env build-nova
+```
+
+**Page 359**: I renamed the `dummy` kernel module to `dummy-char` due to a name collision in the Linux kernel. You also need to load the kernel module before you can write to it.
+
+Load the kernel module with the new name:
+
+```bash
+# modprobe dummy-char
+```
+
+before:
+
+```bash
+# echo hello > /dev/dummy0
+```
+
+**Page 360**:
+
+Replace:
+
+```bash
+# modprobe dummy
+# lsmod
+# rmmod dummy
+```
+
+with:
+
+```bash
+# modprobe dummy-char
+# lsmod
+# rmmod dummy-char
+```
+
 **Page 452**: The version of Docker bundled with the `docker.io` package is severely outdated. Install `docker-ce` instead. See dockerdocs for [instructions](https://docs.docker.com/engine/install/ubuntu/) on how to uninstall old versions and install the official version of Docker.
 
 ## Get to know the authors
