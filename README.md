@@ -108,13 +108,13 @@ $ git clone -b scarthgap https://github.com/TexasInstruments/meta-ti.git
 
 **Page 344**: The `build-beagleplay` directory mentioned in Steps 3 and 4 does not exist. The correct directory name is `build-nova`. Even though the command shown in Step 3 does not result in an immediate error, it does the wrong thing (creates a new `build-beagleplay` directory that defaults to `qemux86-64` as `MACHINE`). First, locate or recreate the `build-nova` directory from Chapter 6. 
 
-Then, execute:
+Then, replace:
 
 ```bash
 $ source poky/oe-init-build-env build-beagleplay
 ```
 
-instead of:
+with:
 
 ```bash
 $ source poky/oe-init-build-env build-nova
