@@ -176,6 +176,20 @@ with:
 
 **Page 452**: The version of Docker bundled with the `docker.io` package is severely outdated. Install `docker-ce` instead. See dockerdocs for [instructions](https://docs.docker.com/engine/install/ubuntu/) on how to uninstall old versions and install the official version of Docker.
 
+**Page 478**:
+
+Replace:
+
+```bash
+$ bitbake-layers layerindex-fetch --branch scarthgap --fetchdir ~meta-virtualization
+```
+
+with:
+
+```bash
+$ bitbake-layers layerindex-fetch --branch scarthgap --fetchdir ~/meta-virtualization meta-virtualization
+```
+
 ## Get to know the authors
 **Frank Vasquez** is an independent software consultant and trainer living in Silicon Valley. He has more than a decade of experience designing and building embedded Linux systems. During that time, he has shipped numerous products, including a rackmount DSP audio server, a diver-held sonar camcorder, an IoT hotspot, a home battery, and a grid-scale energy storage system. Since the third edition of this book was published, Frank has also become a frequent speaker at open-source software conferences including the Yocto Project Summit, Open Source Summit, FOSDEM, All Systems Go! and the Linux Plumbers Conference.
 
