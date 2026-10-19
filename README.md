@@ -98,10 +98,34 @@ BR2_TARGET_UBOOT_BOARD_DEFCONFIG="nova"
 
 U-Boot was being built for the wrong target board, so you would not see the expected `nova =>` prompt on the serial console.
 
-**Page 185**: Cloning the `meta-ti` layer ultimately fails with `remote: Repository not found` because the URL has changed. Clone `meta-ti` from its new location instead.
+**Page 185**: Cloning the `poky` layer ultimately fails with `fatal: unable to connect to git.yoctoproject.org` because SSH is no longer supported. Clone `poky` via HTTPS instead.
+
+```bash
+git clone -b scarthgap https://git.yoctoproject.org/poky.git
+```
+
+Cloning the `meta-ti` layer ultimately fails with `remote: Repository not found` because the URL has changed. Clone `meta-ti` from its new location instead.
 
 ```bash
 $ git clone -b scarthgap https://github.com/TexasInstruments/meta-ti.git
+```
+
+**Page 186**: Cloning the `meta-arm` layer ultimately fails with `fatal: unable to connect to git.yoctoproject.org` because SSH is no longer supported. Clone `meta-arm` via HTTPS instead.
+
+```bash
+git clone -b scarthgap https://git.yoctoproject.org/meta-arm
+```
+
+**Page 203**: Cloning the `meta-openembedded` layer ultimately fails with `fatal: unable to connect to git.openembedded.org` because SSH is no longer supported. Clone `meta-openembedded` via HTTPS instead.
+
+```bash
+git clone -b scarthgap https://git.openembedded.org/meta-openembedded
+```
+
+Cloning the `meta-raspberrypi` layer ultimately fails with `fatal: unable to connect to git.yoctoproject.org` because SSH is no longer supported. Clone `meta-meta-raspberrypi` via HTTPS instead.
+
+```bash
+git clone -b scarthgap https://git.yoctoproject.org/meta-raspberrypi
 ```
 
 **Page 344**: The `build-beagleplay` directory mentioned in Steps 3 and 4 does not exist. The correct directory name is `build-nova`. Even though the command shown in Step 3 does not result in an immediate error, it does the wrong thing (creates a new `build-beagleplay` directory that defaults to `qemux86-64` as `MACHINE`). First, locate or recreate the `build-nova` directory from Chapter 6. 
