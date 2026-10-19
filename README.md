@@ -174,6 +174,20 @@ with:
 # rmmod dummy-char
 ```
 
+**Page 416**:
+
+Replace:
+
+```bash
+$ cd MELD/Chapter15/do-work
+```
+
+with:
+
+```bash
+$ cd MELD/Chapter14/do-work
+```
+
 **Page 452**: The version of Docker bundled with the `docker.io` package is severely outdated. Install `docker-ce` instead. See dockerdocs for [instructions](https://docs.docker.com/engine/install/ubuntu/) on how to uninstall old versions and install the official version of Docker.
 
 **Page 478**:
