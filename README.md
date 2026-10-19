@@ -204,6 +204,24 @@ with:
 $ bitbake-layers layerindex-fetch --branch scarthgap --fetchdir ~/meta-virtualization meta-virtualization
 ```
 
+**Page 546**: In recent glibc versions, you must explicitly preload the debug library to enable memory tracing.
+
+Replace:
+
+```bash
+$ export MALLOC_TRACE=mtrace.log
+$ ./mtrace-example
+$ mtrace mtrace-example mtrace.log
+```
+
+with:
+
+```bash
+$ export MALLOC_TRACE=mtrace.log
+$ LD_PRELOAD=/lib/x86_64-linux-gnu/libc_malloc_debug.so.0 ./mtrace-example
+$ mtrace mtrace-example mtrace.log
+```
+
 ## Get to know the authors
 **Frank Vasquez** is an independent software consultant and trainer living in Silicon Valley. He has more than a decade of experience designing and building embedded Linux systems. During that time, he has shipped numerous products, including a rackmount DSP audio server, a diver-held sonar camcorder, an IoT hotspot, a home battery, and a grid-scale energy storage system. Since the third edition of this book was published, Frank has also become a frequent speaker at open-source software conferences including the Yocto Project Summit, Open Source Summit, FOSDEM, All Systems Go! and the Linux Plumbers Conference.
 
